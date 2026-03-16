@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/munta/Documents/financial-risk-copilot/mlruns/707410312417441972/b5a0b09ab09e42828bccd35e3230b086/artifacts
+end_time: 1773643519689
+entry_point_name: ''
+experiment_id: '707410312417441972'
+lifecycle_stage: active
+run_id: b5a0b09ab09e42828bccd35e3230b086
+run_name: xgboost_baseline
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1773643503505
+status: 3
+tags: []
+user_id: munta

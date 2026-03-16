@@ -1,0 +1,22 @@
+artifact_path: file:///C:/Users/munta/Documents/financial-risk-copilot/mlruns/707410312417441972/models/m-e483e688b36b43c4b1ce69edba49566d/artifacts
+flavors:
+  python_function:
+    data: model.ubj
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.xgboost
+    python_version: 3.13.12
+  xgboost:
+    code: null
+    data: model.ubj
+    model_class: xgboost.sklearn.XGBClassifier
+    model_format: ubj
+    xgb_version: 3.2.0
+mlflow_version: 3.10.1
+model_id: m-e483e688b36b43c4b1ce69edba49566d
+model_size_bytes: 720496
+model_uuid: m-e483e688b36b43c4b1ce69edba49566d
+prompts: null
+run_id: b5a0b09ab09e42828bccd35e3230b086
+utc_time_created: '2026-03-16 06:45:04.108420'

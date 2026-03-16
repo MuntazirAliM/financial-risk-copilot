@@ -1,0 +1,10 @@
+artifact_location: file:///C:/Users/munta/Documents/financial-risk-copilot/mlruns/707410312417441972/models/m-e483e688b36b43c4b1ce69edba49566d/artifacts
+creation_timestamp: 1773643504035
+experiment_id: '707410312417441972'
+last_updated_timestamp: 1773643519665
+model_id: m-e483e688b36b43c4b1ce69edba49566d
+model_type: null
+name: xgboost_risk_model
+source_run_id: b5a0b09ab09e42828bccd35e3230b086
+status: 2
+status_message: null

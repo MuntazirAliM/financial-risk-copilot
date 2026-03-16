@@ -21,7 +21,7 @@ The platform ingests **5 years of market data** and **real SEC 10-K filings**, t
 
 ## Live Demo
 
-![Dashboard Preview](assets/dashboard.png)
+![Dashboard Preview](asset/dashboard.png)
 
 ### Three core modules:
 

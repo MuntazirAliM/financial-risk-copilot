@@ -203,19 +203,9 @@ HF_TOKEN=your_token_here          # Optional - for higher HuggingFace rate limit
 
 ---
 
-## Resume Bullets
-
-> Copy-paste ready for your CV:
-
-- Architected an end-to-end financial risk platform combining XGBoost (ROC-AUC: 0.68) with a RAG pipeline over 500+ SEC 10-K filings using LangChain, ChromaDB, and Ollama
-- Engineered a DuckDB SQL warehouse ingesting 15,000+ rows of market data with walk-forward validated ML risk scoring for 10 S&P 500 companies
-- Deployed a Bloomberg-style Streamlit dashboard with MLflow experiment tracking, Evidently drift monitoring, and local LLM inference via Ollama
-
----
-
 ## Author
 
-**Munta**
+**Muntazir Ali Mughal**
 - GitHub: [@MuntazirAliM](https://github.com/MuntazirAliM)
 - LinkedIn: (https://linkedin.com/in/muntazir-ali-mughal)
 

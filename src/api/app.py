@@ -1,17 +1,22 @@
+import os
 import streamlit as st
 import duckdb
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 import pickle
+from pathlib import Path
+from dotenv import load_dotenv
 from langchain_core.prompts import PromptTemplate
-from langchain_ollama import OllamaLLM
+from langchain_groq import ChatGroq
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from langchain_community.vectorstores import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 import warnings
 warnings.filterwarnings('ignore')
+
+load_dotenv()
 
 # ── Page config ───────────────────────────────────────────
 st.set_page_config(
@@ -484,11 +489,12 @@ AMBER      = '#C97A2C'
 BG_CARD    = '#0F0F0F'
 BORDER     = '#2A2400'
 
-# ── Paths ─────────────────────────────────────────────────
-DB_PATH     = "D:/financial-risk-copilot/data/financial_warehouse.duckdb"
-CHROMA_PATH = "D:/financial-risk-copilot/data/chroma_db"
-MODEL_PATH  = "D:/financial-risk-copilot/models/xgboost_risk_model.pkl"
-SCALER_PATH = "D:/financial-risk-copilot/models/scaler.pkl"
+# ── Paths — portable, works locally and on cloud ──────────
+BASE_DIR    = Path(__file__).parent.parent.parent
+DB_PATH     = str(BASE_DIR / "data" / "financial_warehouse.duckdb")
+CHROMA_PATH = str(BASE_DIR / "data" / "chroma_db")
+MODEL_PATH  = str(BASE_DIR / "models" / "xgboost_risk_model.pkl")
+SCALER_PATH = str(BASE_DIR / "models" / "scaler.pkl")
 
 # ── Cached loaders ────────────────────────────────────────
 @st.cache_resource
@@ -533,7 +539,14 @@ Analysis:"""
         template=prompt_template,
         input_variables=["context", "question"]
     )
-    llm = OllamaLLM(model="tinyllama")
+
+    # ── LLM: Groq (replaces Ollama — no local model needed) ──
+    llm = ChatGroq(
+        model="llama-3.1-8b-instant",
+        temperature=0.1,
+        max_tokens=1024,
+        api_key=os.getenv("GROQ_API_KEY"),
+    )
 
     def format_docs(docs):
         return "\n\n".join([
@@ -569,7 +582,7 @@ with st.sidebar:
     <div style='margin-top: 40px; padding-top: 16px; border-top: 1px solid #1A1800;'>
         <div style='font-family: "DM Mono", monospace; font-size: 9px; color: #3A2A0A; letter-spacing: 0.15em; text-transform: uppercase; line-height: 2;'>
             XGBoost · RAG · LangChain<br>
-            DuckDB · ChromaDB · Ollama
+            DuckDB · ChromaDB · Groq
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -603,7 +616,6 @@ if page == "DASHBOARD":
         low    = len(latest[latest['risk_category'] == 'Low Risk'])
         avg_score = latest['risk_score'].mean()
 
-        # KPI row
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("HIGH RISK", high,   delta=None)
         c2.metric("MEDIUM RISK", medium, delta=None)
@@ -612,7 +624,6 @@ if page == "DASHBOARD":
 
         st.markdown("<div style='height:24px'></div>", unsafe_allow_html=True)
 
-        # Risk bar chart
         colors = latest['risk_category'].map({
             'High Risk':   RED,
             'Medium Risk': AMBER,
@@ -623,22 +634,17 @@ if page == "DASHBOARD":
         fig.add_trace(go.Bar(
             x=latest['ticker'],
             y=latest['risk_score'].round(2),
-            marker=dict(
-                color=colors,
-                line=dict(color='#1A1800', width=0.5)
-            ),
+            marker=dict(color=colors, line=dict(color='#1A1800', width=0.5)),
             text=[f"{v:.2f}" for v in latest['risk_score']],
             textposition='outside',
             textfont=dict(family='DM Mono, monospace', size=10, color='#8A7A5A'),
         ))
-
-        fig.add_hline(y=0.6, line_dash="dot", line_color=AMBER,  line_width=1,
+        fig.add_hline(y=0.6, line_dash="dot", line_color=AMBER, line_width=1,
                       annotation_text="MEDIUM THRESHOLD",
                       annotation_font=dict(size=9, color=AMBER, family='DM Mono, monospace'))
-        fig.add_hline(y=0.3, line_dash="dot", line_color=GREEN,  line_width=1,
+        fig.add_hline(y=0.3, line_dash="dot", line_color=GREEN, line_width=1,
                       annotation_text="LOW THRESHOLD",
                       annotation_font=dict(size=9, color=GREEN, family='DM Mono, monospace'))
-
         fig.update_layout(
             **PLOTLY_LAYOUT,
             title="CURRENT RISK SCORES — S&P 500 SELECTION",
@@ -649,7 +655,6 @@ if page == "DASHBOARD":
         )
         st.plotly_chart(fig, use_container_width=True)
 
-        # Risk legend
         st.markdown(f"""
         <div style='display:flex; gap:24px; margin-bottom:24px; font-family:"DM Mono",monospace; font-size:10px; letter-spacing:0.1em;'>
             <span style='color:{RED};'>▮ HIGH RISK  &gt;0.60</span>
@@ -658,7 +663,6 @@ if page == "DASHBOARD":
         </div>
         """, unsafe_allow_html=True)
 
-        # Scorecard table
         st.markdown(f"""
         <div style='font-family:"DM Mono",monospace; font-size:10px; color:{GOLD_DIM}; letter-spacing:0.15em; text-transform:uppercase; margin-bottom:12px;'>
             ◈ Risk Scorecard
@@ -670,12 +674,7 @@ if page == "DASHBOARD":
         display_df['PRICE ($)'] = display_df['PRICE ($)'].round(2)
         display_df['RISK SCORE'] = display_df['RISK SCORE'].round(4)
         display_df['30D VOLATILITY'] = display_df['30D VOLATILITY'].round(4)
-
-        st.dataframe(
-            display_df,
-            use_container_width=True,
-            hide_index=True
-        )
+        st.dataframe(display_df, use_container_width=True, hide_index=True)
 
     except Exception as e:
         st.error(f"Database error: {e}")
@@ -687,13 +686,12 @@ elif page == "AI ANALYST":
 
     st.markdown(f"""
     <div style='padding: 8px 0 32px 0;'>
-        <div style='font-family: "DM Mono", monospace; font-size: 10px; color: {GOLD_DIM}; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 8px;'>Powered by RAG + TinyLlama</div>
+        <div style='font-family: "DM Mono", monospace; font-size: 10px; color: {GOLD_DIM}; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 8px;'>Powered by RAG + Groq (Llama 3)</div>
         <div style='font-family: "Playfair Display", serif; font-size: 36px; color: #E8E0D0; font-weight: 400; line-height: 1.1;'>AI Risk Analyst</div>
         <div style='font-family: "DM Sans", sans-serif; font-size: 14px; color: #4A3A1A; margin-top: 8px;'>Natural language queries over real SEC 10-K filings · Source-grounded answers</div>
     </div>
     """, unsafe_allow_html=True)
 
-    # Example queries
     st.markdown(f"""
     <div style='font-family:"DM Mono",monospace; font-size:10px; color:{GOLD_DIM}; letter-spacing:0.15em; text-transform:uppercase; margin-bottom:12px;'>
         ◈ Sample Queries
@@ -722,7 +720,6 @@ elif page == "AI ANALYST":
 
     st.markdown("<div style='height:24px'></div>", unsafe_allow_html=True)
 
-    # Query input
     st.markdown(f"""
     <div style='font-family:"DM Mono",monospace; font-size:10px; color:{GOLD_DIM}; letter-spacing:0.15em; text-transform:uppercase; margin-bottom:8px;'>
         ◈ Enter Analyst Query
@@ -771,7 +768,7 @@ elif page == "AI ANALYST":
                         """, unsafe_allow_html=True)
 
             except Exception as e:
-                st.error(f"Analysis failed: {e}. Ensure Ollama is running.")
+                st.error(f"Analysis failed: {e}. Make sure GROQ_API_KEY is set in your .env file.")
 
 # ══════════════════════════════════════════════════════════
 # PAGE 3 — EQUITY LENS
@@ -805,19 +802,14 @@ elif page == "EQUITY LENS":
             ORDER BY date
         """).df()
 
-        latest_row  = df.iloc[-1]
-        cat         = str(latest_row['risk_category'])
-        score       = latest_row['risk_score']
-        price       = latest_row['close']
-        vol         = latest_row['volatility_30d']
+        latest_row = df.iloc[-1]
+        cat        = str(latest_row['risk_category'])
+        score      = latest_row['risk_score']
+        price      = latest_row['close']
+        vol        = latest_row['volatility_30d']
 
-        cat_color = {
-            'High Risk': RED,
-            'Medium Risk': AMBER,
-            'Low Risk': GREEN
-        }.get(cat, GOLD)
+        cat_color = {'High Risk': RED, 'Medium Risk': AMBER, 'Low Risk': GREEN}.get(cat, GOLD)
 
-        # Header card
         st.markdown(f"""
         <div style='background:{BG_CARD}; border:1px solid {BORDER}; border-left:3px solid {cat_color}; padding:20px 24px; border-radius:2px; margin-bottom:24px; display:flex; justify-content:space-between; align-items:center;'>
             <div>
@@ -831,7 +823,6 @@ elif page == "EQUITY LENS":
         </div>
         """, unsafe_allow_html=True)
 
-        # Stat row
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("RISK SCORE", f"{score:.3f}")
         c2.metric("CATEGORY",   cat.upper().replace(' RISK',''))
@@ -840,34 +831,23 @@ elif page == "EQUITY LENS":
 
         st.markdown("<div style='height:24px'></div>", unsafe_allow_html=True)
 
-        # Price chart
         fig1 = go.Figure()
         fig1.add_trace(go.Scatter(
             x=df['date'], y=df['close'].round(2),
-            mode='lines',
-            name='Close Price',
+            mode='lines', name='Close Price',
             line=dict(color=GOLD, width=1.5),
-            fill='tozeroy',
-            fillcolor='rgba(201,168,76,0.04)'
+            fill='tozeroy', fillcolor='rgba(201,168,76,0.04)'
         ))
-        fig1.update_layout(
-            **PLOTLY_LAYOUT,
-            title=f"{ticker} — PRICE HISTORY",
-            height=280,
-            showlegend=False,
-            yaxis_title="USD"
-        )
+        fig1.update_layout(**PLOTLY_LAYOUT, title=f"{ticker} — PRICE HISTORY",
+                           height=280, showlegend=False, yaxis_title="USD")
         st.plotly_chart(fig1, use_container_width=True)
 
         col1, col2 = st.columns(2)
-
-        # Risk score over time
         with col1:
             fig2 = go.Figure()
             fig2.add_trace(go.Scatter(
                 x=df['date'], y=df['risk_score'].round(4),
-                mode='lines',
-                name='Risk Score',
+                mode='lines', name='Risk Score',
                 line=dict(color=RED, width=1.5),
             ))
             fig2.add_hrect(y0=0.6, y1=1.0, fillcolor=RED,   opacity=0.04, line_width=0)
@@ -875,53 +855,32 @@ elif page == "EQUITY LENS":
             fig2.add_hrect(y0=0.0, y1=0.3, fillcolor=GREEN,  opacity=0.04, line_width=0)
             fig2.add_hline(y=0.6, line_dash="dot", line_color=AMBER, line_width=0.8)
             fig2.add_hline(y=0.3, line_dash="dot", line_color=GREEN, line_width=0.8)
-            fig2.update_layout(
-                **PLOTLY_LAYOUT,
-                title="RISK SCORE TRAJECTORY",
-                height=260,
-                showlegend=False,
-                yaxis_range=[0, 1]
-            )
+            fig2.update_layout(**PLOTLY_LAYOUT, title="RISK SCORE TRAJECTORY",
+                               height=260, showlegend=False, yaxis_range=[0, 1])
             st.plotly_chart(fig2, use_container_width=True)
 
-        # Volatility surface
         with col2:
             fig3 = go.Figure()
             fig3.add_trace(go.Scatter(
                 x=df['date'], y=df['volatility_30d'].round(4),
-                mode='lines',
-                name='30D Volatility',
+                mode='lines', name='30D Volatility',
                 line=dict(color=AMBER, width=1.5),
-                fill='tozeroy',
-                fillcolor='rgba(201,122,44,0.06)'
+                fill='tozeroy', fillcolor='rgba(201,122,44,0.06)'
             ))
-            fig3.update_layout(
-                **PLOTLY_LAYOUT,
-                title="30-DAY ROLLING VOLATILITY",
-                height=260,
-                showlegend=False,
-            )
+            fig3.update_layout(**PLOTLY_LAYOUT, title="30-DAY ROLLING VOLATILITY",
+                               height=260, showlegend=False)
             st.plotly_chart(fig3, use_container_width=True)
 
-        # Daily return distribution
         fig4 = go.Figure()
         fig4.add_trace(go.Histogram(
             x=df['daily_return'].dropna().round(4),
             nbinsx=60,
-            marker=dict(
-                color=GOLD_DIM,
-                line=dict(color='#1A1800', width=0.3)
-            ),
+            marker=dict(color=GOLD_DIM, line=dict(color='#1A1800', width=0.3)),
             name='Daily Return'
         ))
-        fig4.update_layout(
-            **PLOTLY_LAYOUT,
-            title=f"{ticker} — DAILY RETURN DISTRIBUTION",
-            height=240,
-            showlegend=False,
-            xaxis_title="Daily Return",
-            yaxis_title="Frequency"
-        )
+        fig4.update_layout(**PLOTLY_LAYOUT, title=f"{ticker} — DAILY RETURN DISTRIBUTION",
+                           height=240, showlegend=False,
+                           xaxis_title="Daily Return", yaxis_title="Frequency")
         st.plotly_chart(fig4, use_container_width=True)
 
     except Exception as e:

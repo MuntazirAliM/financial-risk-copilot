@@ -1,11 +1,12 @@
 # ◈ FinRisk Terminal
 ### AI-Powered Financial Risk Intelligence Platform
 
-![Python](https://img.shields.io/badge/Python-3.13-gold?style=flat-square&logo=python&logoColor=white&labelColor=080808&color=C9A84C)
+![Python](https://img.shields.io/badge/Python-3.11-gold?style=flat-square&logo=python&logoColor=white&labelColor=080808&color=C9A84C)
 ![XGBoost](https://img.shields.io/badge/XGBoost-Risk_Model-gold?style=flat-square&labelColor=080808&color=C9A84C)
 ![LangChain](https://img.shields.io/badge/LangChain-RAG_Pipeline-gold?style=flat-square&labelColor=080808&color=C9A84C)
 ![Streamlit](https://img.shields.io/badge/Streamlit-Dashboard-gold?style=flat-square&labelColor=080808&color=C9A84C)
 ![MLflow](https://img.shields.io/badge/MLflow-Experiment_Tracking-gold?style=flat-square&labelColor=080808&color=C9A84C)
+![Groq](https://img.shields.io/badge/LLM-Groq_Llama3-gold?style=flat-square&labelColor=080808&color=C9A84C)
 
 ---
 
@@ -21,7 +22,7 @@ The platform ingests **5 years of market data** and **real SEC 10-K filings**, t
 
 ## Live Demo
 
-![Dashboard Preview](asset/dashboard.png)
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://financial-risk-copilot.streamlit.app)
 
 ### Three core modules:
 
@@ -44,11 +45,10 @@ The platform ingests **5 years of market data** and **real SEC 10-K filings**, t
 │  yfinance    │  XGBoost         │  LangChain            │
 │  SEC EDGAR   │  scikit-learn    │  ChromaDB (vectors)   │
 │  DuckDB      │  MLflow          │  HuggingFace embed    │
-│  SQL pipeln  │  Evidently       │  Ollama (TinyLlama)   │
+│  SQL pipeln  │  Evidently       │  Groq (Llama 3)       │
 └──────────────┴──────────────────┴───────────────────────┘
                         │
                  Streamlit App
-                 FastAPI backend
 ```
 
 ---
@@ -60,8 +60,14 @@ The platform ingests **5 years of market data** and **real SEC 10-K filings**, t
 - **Walk-forward time series validation** — no data leakage, production-realistic evaluation
 - **MLflow experiment tracking** — full model registry with parameters and metrics logged
 - **DuckDB SQL warehouse** — analytical queries over 15,000+ rows of financial data
-- **Local LLM** — fully offline inference via Ollama, no API costs
+- **Groq-powered LLM** — fast cloud inference via Llama 3, deployable without local GPU
 - **Bloomberg-inspired UI** — dark luxury aesthetic with particle animations and gold accents
+
+---
+
+## Impact & Use Case
+
+FinRisk Terminal is designed for portfolio managers and equity analysts who need risk signals they can actually explain to stakeholders — not just a probability score from a black box. The XGBoost model produces interpretable risk categories (High / Medium / Low) backed by the features that drove each score, while the RAG copilot lets analysts ask plain-English questions and receive answers grounded directly in SEC 10-K filings rather than model hallucinations. This matters in practice: a risk assessment that cites the exact paragraph from Apple's annual report discussing supply chain concentration is far more defensible in an investment committee than one generated from parametric assumptions. The system covers the full analytical workflow — macro risk screening on the dashboard, document-grounded qualitative analysis via the AI copilot, and deep per-stock quantitative review in Equity Lens — making it a self-contained risk intelligence workbench rather than a single-purpose model output.
 
 ---
 
@@ -89,13 +95,12 @@ The platform ingests **5 years of market data** and **real SEC 10-K filings**, t
 | `LangChain` | RAG pipeline orchestration (LCEL) |
 | `ChromaDB` | Vector store for SEC filing embeddings |
 | `HuggingFace` | `all-MiniLM-L6-v2` embedding model |
-| `Ollama` | Local LLM inference (TinyLlama) |
+| `Groq` | Cloud LLM inference (Llama 3 8B) |
 
 ### Deployment
 | Tool | Purpose |
 |---|---|
 | `Streamlit` | Interactive dashboard frontend |
-| `FastAPI` | REST API backend |
 | `Docker` | Containerisation |
 
 ---
@@ -122,18 +127,15 @@ Top predictors: `volatility_30d`, `price_vs_ma30`, `daily_return`, `volatility_7
 ```
 financial-risk-copilot/
 │
-├── notebooks/
+├── notebook/
 │   ├── 01_data_ingestion.ipynb        # Market data + DuckDB warehouse
 │   ├── 02_sec_filings_ingestion.ipynb # SEC 10-K filing download + extraction
-│   ├── 03_rag_pipeline.ipynb          # LangChain RAG + ChromaDB + Ollama
+│   ├── 03_rag_pipeline.ipynb          # LangChain RAG + ChromaDB + Groq
 │   └── 04_risk_scoring_model.ipynb    # XGBoost + MLflow + risk scores
 │
 ├── src/
-│   ├── api/
-│   │   └── app.py                     # Streamlit dashboard
-│   ├── ingestion/                     # Data pipeline modules
-│   ├── rag/                           # RAG pipeline modules
-│   └── ml/                            # ML model modules
+│   └── api/
+│       └── app.py                     # Streamlit dashboard
 │
 ├── data/
 │   ├── financial_warehouse.duckdb     # DuckDB warehouse
@@ -144,10 +146,10 @@ financial-risk-copilot/
 │   ├── xgboost_risk_model.pkl         # Trained XGBoost model
 │   └── scaler.pkl                     # Feature scaler
 │
-├── monitoring/                        # Evidently drift reports
+├── asset/                             # Screenshots and demo GIFs
 ├── mlruns/                            # MLflow experiment logs
 ├── requirements.txt
-├── .env.example
+├── .env                               # Local secrets (never committed)
 └── README.md
 ```
 
@@ -156,26 +158,27 @@ financial-risk-copilot/
 ## Getting Started
 
 ### Prerequisites
-- Python 3.13
+- Python 3.11
 - Anaconda / Miniconda
-- [Ollama](https://ollama.com) installed and running
+- Groq API key — free at [console.groq.com](https://console.groq.com)
 
 ### Installation
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/yourusername/financial-risk-copilot.git
+git clone https://github.com/MuntazirAliM/financial-risk-copilot.git
 cd financial-risk-copilot
 
 # 2. Create conda environment
-conda create -n risk-copilot python=3.13 -y
-conda activate risk-copilot
+conda create -n finrisk python=3.11 -y
+conda activate finrisk
 
 # 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. Pull the LLM model
-ollama pull tinyllama
+# 4. Set your Groq API key
+# Create a .env file in the project root:
+# GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 # 5. Run the data pipelines (in order)
 jupyter lab
@@ -189,8 +192,8 @@ streamlit run src/api/app.py
 
 Create a `.env` file in the project root:
 ```
-OPENAI_API_KEY=your_key_here      # Optional - only if using OpenAI instead of Ollama
-HF_TOKEN=your_token_here          # Optional - for higher HuggingFace rate limits
+GROQ_API_KEY=your_groq_key_here      # Required — get free at console.groq.com
+HF_TOKEN=your_token_here             # Optional — for higher HuggingFace rate limits
 ```
 
 ---
@@ -203,12 +206,26 @@ HF_TOKEN=your_token_here          # Optional - for higher HuggingFace rate limit
 
 ---
 
+## Known Limitations & What I'd Do Differently
+
+**Answer quality is bounded by the model.** Llama 3 8B via Groq is fast and free, and good enough for structured retrieval tasks. For nuanced qualitative risk analysis — reading between the lines of MD&A sections, identifying hedging language, picking up on disclosure tone shifts — a GPT-4 class model would produce materially better outputs. The architecture supports swapping models with a one-line change; the bottleneck is cost, not code.
+
+**Ten tickers is a proof of concept, not a product.** The current pipeline ingests a fixed list of S&P 500 companies defined at notebook-run time. A production version would need dynamic ticker ingestion — a scheduled pipeline that accepts any ticker, downloads the latest 10-K automatically, re-embeds into ChromaDB, and retrains or fine-tunes the risk model incrementally. That's a non-trivial engineering problem I deliberately scoped out to keep the project completable.
+
+**ChromaDB is local and single-node.** It works well for 30 documents and a single user. At scale — thousands of filings, concurrent analysts — I'd replace it with a managed vector database (Pinecone or Weaviate) with proper indexing, access control, and SLAs. The LangChain abstraction makes this a configuration change rather than a rewrite.
+
+**0.68 AUC is the honest ceiling for this data.** Walk-forward validation is the right methodology here — it mirrors how a model would actually be used in production, where you train on history and predict forward. The 0.68 result reflects the genuine difficulty of predicting financial risk from price-derived features alone. Adding alternative data — earnings call transcripts, analyst sentiment, options market implied volatility — would likely push this meaningfully higher, but that data is expensive or requires significant scraping infrastructure.
+
+**I'd add confidence intervals to the risk score.** Currently the model outputs a point estimate (e.g. 0.82 risk score). In practice, a portfolio manager wants to know whether that 0.82 is stable or whether it swings between 0.65 and 0.95 across bootstrap samples. I'd implement conformal prediction intervals on top of the XGBoost output — a technically straightforward addition that would significantly improve the output's usefulness for actual decision-making.
+
+---
+
 ## Author
 
 **Muntazir Ali Mughal**
 - GitHub: [@MuntazirAliM](https://github.com/MuntazirAliM)
-- LinkedIn: (https://linkedin.com/in/muntazir-ali-mughal)
+- LinkedIn: [linkedin.com/in/muntazir-ali-mughal](https://linkedin.com/in/muntazir-ali-mughal)
 
 ---
 
-*Built with Python 3.13 · March 2026*
+*Built with Python 3.11 · Groq API · March 2026*

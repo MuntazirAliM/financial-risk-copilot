@@ -1,0 +1,33 @@
+# Data & database (large files)
+data/financial_warehouse.duckdb
+data/raw/
+data/processed/
+
+# ChromaDB vector store (rebuilt by notebook 02+03)
+data/chroma_db/
+
+# SEC filings (large downloads, rebuilt by notebook 02)
+sec-edgar-filings/
+
+# Trained models (rebuilt by notebook 04)
+models/
+
+# MLflow experiment logs
+mlruns/
+
+# Environment secrets — NEVER commit
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.ipynb_checkpoints/
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db

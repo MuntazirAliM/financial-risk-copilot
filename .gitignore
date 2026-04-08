@@ -1,10 +1,6 @@
 # Data & database (large files)
-data/financial_warehouse.duckdb
 data/raw/
 data/processed/
-
-# ChromaDB vector store (rebuilt by notebook 02+03)
-data/chroma_db/
 
 # SEC filings (large downloads, rebuilt by notebook 02)
 sec-edgar-filings/
@@ -31,3 +27,4 @@ __pycache__/
 # OS
 .DS_Store
 Thumbs.db
+
